@@ -32,8 +32,7 @@ namespace ParkourScugPlugin
                 return;
             }
 
-            ParkourScugFunctionality.ParkourScugTick(player);
-            orig(player, eu);
+            ParkourScugFunctionality.ParkourScugTick(player, orig, eu);
         }
     }
 }
