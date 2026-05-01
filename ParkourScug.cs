@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System; // wa
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,59 +9,111 @@ using RWCustom;
 
 namespace ParkourScugPlugin
 {
-    public static class ParkourScugFunctionality
+    public class ParkourScugData
     {
-        public class ParkourScug
+        public Player player;
+        private readonly Room room;
+        private Player.InputPackage PlayerInput => player.input[0];
+
+
+        public int bellySlideExitCounter = 0;
+
+        public bool betterPoleSlide = false;
+
+        private bool oddTick = false;
+        private Player.AnimationIndex previousAnimation = Player.AnimationIndex.None;
+        private Vector2 previousVelocity = Vector2.zero;
+
+
+        public ParkourScugData(Player player)
         {
-            // Unused
+            this.player = player;
+            room = player.room;
         }
-
-        public static void ParkourScugTick(Player player, On.Player.orig_Update orig, bool eu)
+        public virtual void ParkourScugTick(On.Player.orig_Update orig, bool eu)
         {
-            Room room = player.room;
+            MovementTick();
+            orig(player, eu);
 
-            // Movement -------------------------------------
+            ///Custom.LogImportant("Var Tracker: " + player.slideUpPole);
+        }
+        private void MovementTick()
+        {
+            /* ------------------------------ Smaller Modifiers ------------------------------ */
 
-            // Slide Mechanics ------------------------------
             player.initSlideCounter++;
+
+
+            /* ------------------------------ Momentum Mechanics --------------------------- */
+
+            // Slide into beam momentum
+            if (player.animation == Player.AnimationIndex.ClimbOnBeam && previousAnimation != Player.AnimationIndex.ClimbOnBeam)
+            {
+                player.slideUpPole = (int)(-previousVelocity.y < Math.Abs(previousVelocity.x) ? Math.Sqrt(previousVelocity.magnitude) + 6 : 0) * 2; betterPoleSlide = true;
+                player.firstChunk.vel.x = 0.0f;
+            }
+
+            // Better pole climb
+            if (betterPoleSlide == true)
+            {
+                if (player.slideUpPole < 10)
+                {
+                    player.slideUpPole = 0;
+                    betterPoleSlide = false;
+                }
+                else
+                {
+                    if (oddTick) player.slideUpPole += 1;
+                }
+            }
+
+            /* ------------------------------ Belly Slide Mechanics ------------------------------ */
+
             if (player.animation == Player.AnimationIndex.BellySlide)
             {
-                int rollCounter = player.rollCounter; // For some reason, the roll counter is used for the belly slide. the slideCounter var is actually the turn around.
+                bellySlideExitCounter = 0;
+
+                int rollCounter = player.rollCounter; /// For some reason, rollCounter is used for the belly slide. the slideCounter var is actually the turn around.
 
                 if (rollCounter >= 0 && rollCounter < 3)
                 {
-                    player.bodyChunks[0].vel.x += 24.0f * player.rollDirection;
-                    player.bodyChunks[0].vel.y -= 5.5f;
-                    for (int i = 0; i < 3; i++) room.AddObject(new WaterDrip(player.bodyChunks[0].pos, Custom.DegToVec((-3.0f * player.slideDirection) * Mathf.Lerp(30f, 70f, UnityEngine.Random.value)) * Mathf.Lerp(6f, 11f, UnityEngine.Random.value), false));
+                    player.firstChunk.vel.x += 24.0f * player.rollDirection * (PlayerInput.jmp ? 1.0f : 0.5f);
+                    player.firstChunk.vel.y -= 5.5f;
+                    for (int i = 0; i < 3; i++) room.AddObject(new WaterDrip(player.firstChunk.pos, Custom.DegToVec((-3.0f * player.slideDirection) * Mathf.Lerp(30f, 70f, UnityEngine.Random.value)) * Mathf.Lerp(6f, 11f, UnityEngine.Random.value), false));
+
                 }
                 if (rollCounter >= 3 && rollCounter < 20)
                 {
                     player.rollCounter = 14;
-                    player.bodyChunks[0].vel.x += 4.0f * player.rollDirection;
-                    room.AddObject(new WaterDrip(player.bodyChunks[0].pos, Custom.DegToVec((-1.0f * player.slideDirection) * Mathf.Lerp(30f, 70f, UnityEngine.Random.value)) * Mathf.Lerp(6f, 11f, UnityEngine.Random.value), false));
+                    player.firstChunk.vel.x += 4.0f * player.rollDirection;
+                    room.AddObject(new WaterDrip(player.firstChunk.pos, Custom.DegToVec((-1.0f * player.slideDirection) * Mathf.Lerp(30f, 70f, UnityEngine.Random.value)) * Mathf.Lerp(6f, 11f, UnityEngine.Random.value), false));
                 }
-                
-                if (player.input[0].jmp)
+
+                if (PlayerInput.jmp)
                 {
                     player.longBellySlide = true;
+                    bellySlideExitCounter = -10;
                 }
                 else
                 {
                     player.longBellySlide = false;
                 }
-
-                orig(player, eu);
-
-                if (player.animation == Player.AnimationIndex.ClimbOnBeam) // Slide into beam momentum
+            }
+            else if (bellySlideExitCounter < 20)
+            {
+                // Larger Coyote Frames
+                if (bellySlideExitCounter < 10)
                 {
-                    if (player.input[0].jmp) player.slideUpPole = 30;
-                    else player.slideUpPole = 20;
+                    player.canJump += 1;
                 }
-
-                return;
             }
 
-            orig(player, eu);
+
+            /* ------------------------------ Final Variable Updates ------------------------------ */
+
+            oddTick = !oddTick;
+            previousAnimation = player.animation;
+            previousVelocity = player.firstChunk.vel;
         }
     }
 }

@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using IL.MoreSlugcats;
 using On.Watcher;
 using RWCustom;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace ParkourScugPlugin
@@ -24,6 +25,8 @@ namespace ParkourScugPlugin
             logger.LogInfo("Parkour Scug plugin loaded!");
         }
 
+        private static readonly ConditionalWeakTable<Player, ParkourScugData> PlayerExtensionData = new ConditionalWeakTable<Player, ParkourScugData>();
+        public static ParkourScugData GetParkourScugData(Player player) => PlayerExtensionData.GetValue(player, k => new ParkourScugData(player));
         private void PlayerUpdateTick(On.Player.orig_Update orig, Player player, bool eu)
         {
             if (!IsParkourScug(player))
@@ -32,7 +35,7 @@ namespace ParkourScugPlugin
                 return;
             }
 
-            ParkourScugFunctionality.ParkourScugTick(player, orig, eu);
+            GetParkourScugData(player).ParkourScugTick(orig, eu);
         }
     }
 }
