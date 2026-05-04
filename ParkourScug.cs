@@ -54,6 +54,7 @@ namespace ParkourScugPlugin
         private ParkourScugAnimationIndex customPlayerAnimationState;
 
         public int superRollPounce = 0;
+        public float superRollPounceEnterVelocity = 0;
 
         public int bellySlideExitCounter = 0;
 
@@ -113,9 +114,14 @@ namespace ParkourScugPlugin
             /* ------------------------------ Momentum Mechanics --------------------------- */
 
             // Instant roll pounce
-            if (player.animation == Player.AnimationIndex.Roll && player.input[0].jmp && !player.input[1].jmp)
+            if (player.animation == Player.AnimationIndex.Roll && previousAnimation != Player.AnimationIndex.Roll)
             {
-                if (player.rollCounter < 5)
+                superRollPounceEnterVelocity = previousVelocity.magnitude;
+            }
+            if (player.animation == Player.AnimationIndex.Roll && player.input[0].jmp && (!player.input[1].jmp))
+            {
+                superRollPounceEnterVelocity /= player.rollCounter + 3.0f;
+                if (player.rollCounter < 7)
                 {
                     BoostEffect();
                     BoostDir(10.0f, 20.0f);
@@ -127,7 +133,7 @@ namespace ParkourScugPlugin
             if (superRollPounce > 0)
             {
                 superRollPounce--;
-                player.firstChunk.vel.y += 3f;
+                player.firstChunk.vel.y += superRollPounceEnterVelocity;
             }
 
             // Slide into beam momentum
