@@ -59,15 +59,13 @@ namespace ParkourScugPlugin
         }
         private bool SlugcatHandEngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand hand)
         {
-            return orig(hand); // Unimplemented
-            Player player = null;
+            Player player = hand.connection.owner as Player;
             if (!IsParkourScug(player))
             {
                 return orig(hand);
             }
 
-            GetParkourScugData(player);
-            return orig(hand);
+            return GetParkourScugData(player).animationData.OnHandEngageInMovement(orig, hand);
         }
     }
 }

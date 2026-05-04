@@ -1,4 +1,6 @@
-﻿using System; // wa
+﻿#pragma warning disable IDE1006
+
+using System; // wawa
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,20 +10,54 @@ using static ParkourScugPlugin.ParkourScugPlugin;
 using RWCustom;
 using IL.Menu.Remix;
 using IL.MoreSlugcats;
+using ParkourScugPlugin.ParkourScug;
+using JetBrains.Annotations;
 
 namespace ParkourScugPlugin
 {
     public class ParkourScugData
     {
-        #pragma warning disable IDE1006
         public Player player;
         private Room room => player.room;
         private Player.InputPackage input => player.input[0];
         private PlayerGraphics GetPlayerGraphics() => (player.graphicsModule as PlayerGraphics);
-        #pragma warning restore IDE1006
 
+        public ParkourScugAnimation animationData;
+        public ParkourScugAnimationIndex playerAnimation
+        {
+            get
+            {
+                if (customPlayerAnimationState == Player.AnimationIndex.None) return player.animation as ParkourScugAnimationIndex;
+                else return customPlayerAnimationState;
+            }
+            set
+            {
+                customPlayerAnimationState = Player.AnimationIndex.None as ParkourScugAnimationIndex;
+                if (value is ParkourScugAnimationIndex)
+                {
+                    if (value == ParkourScugAnimationIndex.HangOnCeiling)
+                    {
+                        customPlayerAnimationState = ParkourScugAnimationIndex.HangOnCeiling;
+                        player.animation = Player.AnimationIndex.HangFromBeam;
+                    }
+                    else
+                    {
+                        player.animation = value;
+                    }
+                }
+                else
+                {
+                    player.animation = value;
+                }
+            }
+        }
+        private ParkourScugAnimationIndex customPlayerAnimationState;
+
+        public int superRollPounce = 0;
 
         public int bellySlideExitCounter = 0;
+
+        public int ceilingHangCounter = 0;
 
         public bool betterPoleSlide = false;
 
@@ -33,9 +69,11 @@ namespace ParkourScugPlugin
         public ParkourScugData(Player player)
         {
             this.player = player;
+            animationData = new ParkourScugAnimation(this);
         }
         public virtual void ParkourScugTick(On.Player.orig_Update orig, bool eu)
         {
+            AnimationTick();
             MovementTick();
             orig(player, eu);
 
@@ -46,6 +84,10 @@ namespace ParkourScugPlugin
             /* ------------------------------ Smaller Modifiers ------------------------------ */
 
             player.initSlideCounter++;
+            if (player.animation == Player.AnimationIndex.Roll && player.rollCounter > 10)
+            {
+                player.rollCounter = 10;
+            }
 
 
             /* ------------------------------ New Mechanics --------------------------- */
@@ -53,25 +95,39 @@ namespace ParkourScugPlugin
             // Ceiling hang
             if (player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, -1) && player.animation == Player.AnimationIndex.None && input.y > 0)
             {
-                player.animation = Player.AnimationIndex.HangFromBeam;
-                for (int i = 0; i < GetPlayerGraphics().hands.Length; i++)
+                playerAnimation = ParkourScugAnimationIndex.HangOnCeiling;
+                ceilingHangCounter++;
+                player.firstChunk.vel.y += ceilingHangCounter * 0.01f * Mathf.Lerp(-1.5f, 1.5f, UnityEngine.Random.value);
+                if (ceilingHangCounter > 200 && UnityEngine.Random.value < (ceilingHangCounter - 200) * 0.01f)
                 {
-                    SlugcatHand hand = GetPlayerGraphics().hands[i];
-                    hand.absoluteHuntPos = new Vector2(player.bodyChunks[0].pos.x, player.room.MiddleOfTile(player.bodyChunks[0].pos).y);
-                    hand.absoluteHuntPos.y -= 1f;
-                    hand.absoluteHuntPos.x += ((hand.limbNumber == 0) ? (-1f) : 1f) * (10f + 3f * Mathf.Sin((float)Math.PI * 2f * (float)player.animationFrame / 20f));
+                    player.stun = 5;
                 }
+            }
+            else if (playerAnimation == ParkourScugAnimationIndex.HangOnCeiling)
+            {
+                playerAnimation = Player.AnimationIndex.None as ParkourScugAnimationIndex;
+                ceilingHangCounter = 0;
             }
 
 
             /* ------------------------------ Momentum Mechanics --------------------------- */
 
             // Instant roll pounce
-            if (player.animation == Player.AnimationIndex.Roll && player.input[0].jmp && !player.input[1].jmp && player.rollCounter < 5)
+            if (player.animation == Player.AnimationIndex.Roll && player.input[0].jmp && !player.input[1].jmp)
             {
-                BoostEffect();
-                BoostDir(18.0f, 6.0f);
-                player.rollCounter = 5;
+                if (player.rollCounter < 5)
+                {
+                    BoostEffect();
+                    BoostDir(10.0f, 20.0f);
+                    player.animation = Player.AnimationIndex.None;
+                    player.standing = true;
+                    superRollPounce = 5;
+                }
+            }
+            if (superRollPounce > 0)
+            {
+                superRollPounce--;
+                player.firstChunk.vel.y += 3f;
             }
 
             // Slide into beam momentum
@@ -165,6 +221,10 @@ namespace ParkourScugPlugin
             oddTick = !oddTick;
             previousAnimation = player.animation;
             previousVelocity = player.firstChunk.vel;
+        }
+        private void AnimationTick()
+        {
+            
         }
 
         private void Boost(Vector2 vel) { player.firstChunk.vel += vel; }
