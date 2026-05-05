@@ -87,7 +87,7 @@ namespace ParkourScugPlugin
             player.initSlideCounter++;
             if (player.animation == Player.AnimationIndex.Roll && player.rollCounter > 10)
             {
-                player.rollCounter = 10;
+                player.rollCounter = 25;
             }
 
 
