@@ -30,25 +30,6 @@ namespace ParkourScugPlugin
         public static ParkourScugData GetParkourScugData(Player player) => PlayerExtensionData.GetValue(player, k => new ParkourScugData(player));
         private void PlayerUpdateTick(On.Player.orig_Update orig, Player player, bool eu)
         {
-            if (player.room.world.game.IsArenaSession)
-            {
-                if (player.slugcatStats.name == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Saint)
-                {
-                    bool flag1 = player.input[0].spec && !player.input[1].spec;
-                    bool flag2 = (player.input[0].jmp && player.input[0].pckp) && !(player.input[1].jmp && player.input[1].pckp);
-                    if (flag1 || flag2)
-                    {
-                        if (player.godDeactiveTimer > 0)
-                        {
-                            player.ActivateAscension();
-                        }
-                        else
-                        {
-                            player.DeactivateAscension();
-                        }
-                    }
-                }
-            }
             if (!IsParkourScug(player))
             {
                 orig(player, eu);
