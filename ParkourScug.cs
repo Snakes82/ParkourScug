@@ -1,6 +1,6 @@
 ﻿#pragma warning disable IDE1006
 
-using System; // wawa
+using System; // wawawa
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,6 +40,11 @@ namespace ParkourScugPlugin
                         customPlayerAnimationState = ParkourScugAnimationIndex.HangOnCeiling;
                         player.animation = Player.AnimationIndex.HangFromBeam;
                     }
+                    else if (value == ParkourScugAnimationIndex.WallLatch)
+                    {
+                        customPlayerAnimationState = ParkourScugAnimationIndex.WallLatch;
+                        player.animation = Player.AnimationIndex.None;
+                    }
                     else
                     {
                         player.animation = value;
@@ -52,6 +57,9 @@ namespace ParkourScugPlugin
             }
         }
         private ParkourScugAnimationIndex customPlayerAnimationState;
+
+        public int wallLatchCounter = 0;
+        public int wallLatchExitCounter = 0;
 
         public int superRollPounce = 0;
         public float superRollPounceEnterVelocity = 0;
@@ -108,6 +116,59 @@ namespace ParkourScugPlugin
             {
                 playerAnimation = Player.AnimationIndex.None as ParkourScugAnimationIndex;
                 ceilingHangCounter = 0;
+            }
+
+            // Wall Latch
+            RWCustom.Custom.LogImportant(wallLatchCounter + " ; " + wallLatchExitCounter);
+            if (!(input.x == 0) && player.IsTileSolid(0, input.x, 0) && player.IsTileSolid(1, input.x, 0) && wallLatchCounter < 200)
+            {
+                playerAnimation = ParkourScugAnimationIndex.WallLatch;
+                wallLatchCounter++;
+                wallLatchExitCounter = 5;
+                if (wallLatchCounter == 1)
+                {
+                    player.firstChunk.vel.y += 5f;
+                    room.PlaySound(SoundID.Shelter_Little_Hatch_Close, player.firstChunk, false, 2f, 1.3f);
+                }
+                else if (wallLatchCounter < 100)
+                {
+                    player.firstChunk.vel.y = player.firstChunk.vel.y / 2f;
+                    player.firstChunk.vel.y += 1f;
+                }
+                else if (wallLatchCounter < 150)
+                {
+                    player.firstChunk.vel.y = 0f;
+                }
+                else
+                {
+                    wallLatchCounter = 300;
+                }
+            }
+            else
+            {
+                if (playerAnimation == ParkourScugAnimationIndex.WallLatch)
+                {
+                    playerAnimation = Player.AnimationIndex.None as ParkourScugAnimationIndex;
+                }
+                if (wallLatchExitCounter > 0)
+                {
+                    wallLatchExitCounter--;
+                    if (input.jmp && !player.input[1].jmp && wallLatchCounter < 100)
+                    {
+                        previousVelocity = new Vector2(0f, 10f);
+                        player.animation = Player.AnimationIndex.Roll;
+                        if (input.y == -1) player.rollCounter = 25;
+                        else player.rollCounter = 0;
+                        wallLatchExitCounter = 0;
+                        wallLatchCounter += 200;
+                    }
+                }
+                if (wallLatchCounter > 0)
+                {
+                    if (player.IsTileSolid(1, 0, -1)) wallLatchCounter = 0;
+                    else if (player.animation != Player.AnimationIndex.None && player.animation != Player.AnimationIndex.Roll) wallLatchCounter = 0;
+                    else wallLatchCounter--;
+                }
             }
 
 

@@ -11,6 +11,7 @@ namespace ParkourScugPlugin.ParkourScug
     public class ParkourScugAnimationIndex : Player.AnimationIndex
     {
         public static readonly ParkourScugAnimationIndex HangOnCeiling = new ParkourScugAnimationIndex("HangOnCeiling", register: true);
+        public static readonly ParkourScugAnimationIndex WallLatch = new ParkourScugAnimationIndex("WallLatch", register: true);
         public ParkourScugAnimationIndex(string value, bool register = false)
             : base(value, register)
         {
