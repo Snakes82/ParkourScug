@@ -1,0 +1,13 @@
+{
+  "Title": "Parkour Scug",
+  "Description": "Parkour Scug is the temporary name for this",
+  "ID": "ParkourScug",
+  "Version": "0.1",
+  "TargetGameVersion": "v1.9.06",
+  "Requirements": [ "slime-cubed.slugbase" ],
+  "RequirementNames": [ "SlugBase" ],
+  "Authors": "Toest, FlyingFishBone",
+  "Visibility": "Private",
+  "UploadFilesOnly": true,
+  "UploadThumbnail": false
+}
