@@ -210,7 +210,7 @@ namespace ParkourScugPlugin
                 if (player.slideUpPole > 10)
                 {
                     if (oddTick) player.slideUpPole += 1;
-                    if (player.animation == Player.AnimationIndex.GetUpToBeamTip)
+                    if (player.animation == Player.AnimationIndex.GetUpToBeamTip && input.y == 1 && slideUpPole > 30)
                     {
                         player.animation = Player.AnimationIndex.None;
                         player.firstChunk.vel.y += Mathf.Sqrt(player.slideUpPole - 10) + 5;
