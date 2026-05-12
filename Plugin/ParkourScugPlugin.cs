@@ -1,4 +1,4 @@
-﻿using BepInEx; //wawawawa
+﻿using BepInEx; //wawawawawawa
 using BepInEx.Logging;
 using IL.MoreSlugcats;
 using On.Watcher;
@@ -14,7 +14,7 @@ namespace ParkourScugPlugin
     {
         public static ManualLogSource logger;
 
-        private bool IsParkourScug(Player player) { return player.slugcatStats.name == SlugcatStats.Name.White; }
+        private bool IsParkourScug(Player player) { return player.SlugCatClass.ToString().Equals("revenant"); }
 
         public void OnEnable()
         {
